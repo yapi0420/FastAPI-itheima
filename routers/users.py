@@ -15,11 +15,13 @@ async def register(user_data: UserRegister, db: AsyncSession=Depends(get_db)):
     if exiting_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="用户已存在")
     user=await users.create_user(db,user_data)
+    token=await users.create_token(db,user.id)
+
     return{
         "code": 200,
         "message": "注册成功",
         "data": {
-            "token": "用户访问令牌",
+            "token": token,
             "userInfo": {
                 "id": user.id,
                 "username": user_data.username,
