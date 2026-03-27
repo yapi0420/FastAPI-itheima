@@ -1,5 +1,5 @@
 from timeit import default_timer
-from schemas.users import UserRegister
+from schemas.users import UserRegister,UserInfoResponse,UserAuthResponse,UserInfoBase
 from  fastapi import APIRouter,Depends,Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +7,8 @@ from crud import news,users
 from config.db_conf import get_db
 from fastapi.exceptions import HTTPException
 from fastapi import status
+
+from utils.response import success_response
 
 router=APIRouter(prefix= "/api/user",tags=["users"])
 @router.post("/register")
@@ -17,16 +19,18 @@ async def register(user_data: UserRegister, db: AsyncSession=Depends(get_db)):
     user=await users.create_user(db,user_data)
     token=await users.create_token(db,user.id)
 
-    return{
-        "code": 200,
-        "message": "注册成功",
-        "data": {
-            "token": token,
-            "userInfo": {
-                "id": user.id,
-                "username": user_data.username,
-                "bio": user.bio,
-                "avatar": user.avatar
-            }
-        }
-    }
+    response=UserAuthResponse(token=token,user_info=UserInfoResponse.model_validate(user))
+    return success_response(message="成功",data={response})
+    # return{
+    #     "code": 200,
+    #     "message": "注册成功",
+    #     "data": {
+    #         "token": token,
+    #         "userInfo": {
+    #             "id": user.id,
+    #             "username": user_data.username,
+    #             "bio": user.bio,
+    #             "avatar": user.avatar
+    #         }
+    #     }
+    # }
