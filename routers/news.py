@@ -34,6 +34,10 @@ async def get_news_list(
         page_size:int =Query(10,alias="pageSize",le=100),
         db: AsyncSession=Depends(get_db)
 ):
+    # 先验证分类是否存在
+    if not await news.category_exists(db, category_id):
+        raise HTTPException(status_code=404, detail="新闻分类不存在")
+    
     news_list=await news.get_news_list(db,category_id,(page-1)*page_size,page_size)
     total = await news.get_news_count(db,category_id)
     has_more =((page-1)*page_size+len(news_list) < total)

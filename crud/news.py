@@ -7,6 +7,12 @@ async  def get_categories(db: AsyncSession,skip: int=0,limit: int=100):
     categories=result.scalars().all()
     return categories
 
+async def category_exists(db: AsyncSession, category_id: int) -> bool:
+    """检查分类是否存在"""
+    stmt = select(Category).where(Category.id == category_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none() is not None
+
 async def get_news_list(db: AsyncSession,category_id: int,skip : int=0,limit: int=10):
     #查询指定分类下所有新闻
     stmt = select(News).where(News.category_id==category_id).offset(skip).limit(limit)
