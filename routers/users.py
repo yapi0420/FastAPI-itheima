@@ -34,3 +34,12 @@ async def register(user_data: UserRegister, db: AsyncSession=Depends(get_db)):
     #         }
     #     }
     # }
+
+@router.post("/login")
+async def login(user_datas:UserRegister,db: AsyncSession=Depends(get_db)):
+    user=await users.authenticate_user(db,user_datas.username,user_datas.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="用户名或密码错误")
+    token=await users.create_token(db,user.id)
+    response=UserAuthResponse(token=token,user_info=UserInfoResponse.model_validate(user))
+    return success_response(message="登录成功",data=response)
