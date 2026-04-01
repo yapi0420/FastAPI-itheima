@@ -1,18 +1,19 @@
-from timeit import default_timer
-from schemas.users import UserRegister,UserInfoResponse,UserAuthResponse,UserInfoBase
-from  fastapi import APIRouter,Depends,Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from crud import news,users
+from starlette import status
+
+from models.users import User
+from schemas.users import UserRequest, UserAuthResponse, UserInfoResponse, UserUpdateRequest, UserChangePasswordRequest
+
 from config.db_conf import get_db
-from fastapi.exceptions import HTTPException
-from fastapi import status
-from utils.auth import get_current_user
+from crud import users
 from utils.response import success_response
+from utils.auth import get_current_user
+
 
 router=APIRouter(prefix= "/api/user",tags=["users"])
 @router.post("/register")
-async def register(user_data: UserRegister, db: AsyncSession=Depends(get_db)):
+async def register(user_data: UserRequest, db: AsyncSession=Depends(get_db)):
     exiting_user=await users.get_user_by_username(db,user_data.username)
     if exiting_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="用户已存在")
@@ -36,7 +37,7 @@ async def register(user_data: UserRegister, db: AsyncSession=Depends(get_db)):
     # }
 
 @router.post("/login")
-async def login(user_datas:UserRegister,db: AsyncSession=Depends(get_db)):
+async def login(user_datas:UserUpdateRequest,db: AsyncSession=Depends(get_db)):
     user=await users.authenticate_user(db,user_datas.username,user_datas.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="用户名或密码错误")
@@ -49,3 +50,11 @@ async def login(user_datas:UserRegister,db: AsyncSession=Depends(get_db)):
 async def get_user_info(user=Depends(get_current_user)):
 
     return success_response(message="获取用户信息成功",data=UserInfoResponse.model_validate(user))
+
+@router.put("update")
+async def update_user_info(user_data:UserUpdateRequest,user:User=Depends(get_current_user),db: AsyncSession=Depends(get_db)):
+    pass
+    # stmt = update(User).where(User.id==user.id).values(**user_info.model_dump())
+    # await db.execute(stmt)
+    # await db.commit()
+    # return success_response(message="更新用户信息成功",data=UserInfoResponse.model_validate(user))
